@@ -1,0 +1,17 @@
+node_modules/
+build/
+.docusaurus/
+.cache-loader/
+
+# Dependencies
+package-lock.json
+
+# Mac
+.DS_Store
+
+# Production build (generated)
+static/js/*.js
+static/css/*.css
+
+# Generated files
+.docusaurus/

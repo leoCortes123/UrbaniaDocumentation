@@ -1,0 +1,1228 @@
+# UrbaniaAPI - Comprehensive API Specification
+
+**Version:** 1.0  
+**Base URL:** `http://localhost/api` (development)  
+**API Prefix:** `/api`  
+**Laravel Version:** 12  
+**PHP Version:** 8.2+  
+**Authentication:** Laravel Sanctum 4
+
+---
+
+## Table of Contents
+
+1. [Authentication](#authentication)
+2. [API Conventions](#api-conventions)
+3. [Endpoints Catalog](#endpoints-catalog)
+4. [Models & Schemas](#models--schemas)
+5. [Request/Response Formats](#requestresponse-formats)
+6. [Error Handling](#error-handling)
+7. [Pagination](#pagination)
+
+---
+
+## Authentication
+
+### Overview
+
+This API uses **Laravel Sanctum** for token-based authentication. Sanctum is configured but note that **login/register endpoints are not exposed in the API routes** — authentication is handled via Laravel's built-in web routes (session-based) for SPA applications.
+
+### Sanctum Configuration
+
+```php
+// config/sanctum.php
+- expiration: null (tokens never expire by default)
+- guard: 'web'
+- stateful domains: localhost, localhost:3000, 127.0.0.1, 127.0.0.1:8000
+```
+
+### Protected Endpoints
+
+| Method | URI | Middleware |
+|--------|-----|-----------|
+| GET | `/api/user` | `auth:sanctum` |
+
+### Authentication Flow
+
+**For Web (SPA):**
+1. User authenticates via Laravel's built-in web routes
+2. Sanctum issues a session cookie
+3. Subsequent API requests automatically include the session cookie
+4. Use `GET /api/user` to retrieve authenticated user
+
+**For Mobile/External Apps (Token-Based):**
+The API does NOT currently expose login/register endpoints. To implement token-based auth for mobile:
+
+1. **Login Endpoint Needed** - You must create this controller:
+   ```php
+   // app/Http/Controllers/Api/AuthController.php
+   Route::post('/login', [AuthController::class, 'login']);
+   Route::post('/register', [AuthController::class, 'register']);
+   ```
+
+2. **Token Creation Example:**
+   ```php
+   $user = User::where('email', $request->email)->first();
+   $token = $user->createToken('api-token')->plainTextToken;
+   return response()->json(['token' => $token]);
+   ```
+
+### Required Headers
+
+For authenticated requests:
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+Accept: application/json
+```
+
+For SPA requests:
+```
+Accept: application/json
+```
+
+---
+
+## API Conventions
+
+### Base URL
+```
+Development: http://localhost/api
+Production: https://yourdomain.com/api
+```
+
+### HTTP Methods
+| Method | Purpose |
+|--------|---------|
+| GET | Retrieve resource(s) |
+| POST | Create new resource |
+| PUT | Full resource update |
+| PATCH | Partial resource update |
+| DELETE | Remove resource |
+
+### Content Type
+All requests and responses use `application/json`.
+
+### URL Parameters
+- `{id}` — Integer ID, validated with `whereNumber('id')`
+- Example: `/api/usuarios/{id}`
+
+---
+
+## Endpoints Catalog
+
+### Base Route Structure
+All routes are under the `/api` prefix as defined in `bootstrap/app.php`.
+
+### Module: Permisos (Permissions)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/permisos` | No | List all permissions |
+| POST | `/api/permisos` | No | Create permission |
+| GET | `/api/permisos/{id}` | No | Get permission |
+| PUT | `/api/permisos/{id}` | No | Update permission |
+| PATCH | `/api/permisos/{id}` | No | Update permission |
+| DELETE | `/api/permisos/{id}` | No | Delete permission |
+
+### Module: Unidades (Units)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/unidades` | No | List all units |
+| POST | `/api/unidades` | No | Create unit |
+| GET | `/api/unidades/{id}` | No | Get unit |
+| PUT | `/api/unidades/{id}` | No | Update unit |
+| PATCH | `/api/unidades/{id}` | No | Update unit |
+| DELETE | `/api/unidades/{id}` | No | Delete unit |
+
+### Module: Bloques (Blocks)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/bloques` | No | List all blocks |
+| POST | `/api/bloques` | No | Create block |
+| GET | `/api/bloques/{id}` | No | Get block |
+| PUT | `/api/bloques/{id}` | No | Update block |
+| PATCH | `/api/bloques/{id}` | No | Update block |
+| DELETE | `/api/bloques/{id}` | No | Delete block |
+
+### Module: Conjuntos (Complex/Communities)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/conjuntos` | No | List all complexes |
+| POST | `/api/conjuntos` | No | Create complex |
+| GET | `/api/conjuntos/{id}` | No | Get complex |
+| PUT | `/api/conjuntos/{id}` | No | Update complex |
+| PATCH | `/api/conjuntos/{id}` | No | Update complex |
+| DELETE | `/api/conjuntos/{id}` | No | Delete complex |
+
+### Module: Parametros Sistema (System Parameters)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/parametros-sistema` | No | List system params |
+| POST | `/api/parametros-sistema` | No | Create system param |
+| GET | `/api/parametros-sistema/{id}` | No | Get system param |
+| PUT | `/api/parametros-sistema/{id}` | No | Update system param |
+| PATCH | `/api/parametros-sistema/{id}` | No | Update system param |
+| DELETE | `/api/parametros-sistema/{id}` | No | Delete system param |
+
+### Module: Municipios (Municipalities)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/municipios` | No | List municipalities |
+| POST | `/api/municipios` | No | Create municipality |
+| GET | `/api/municipios/{id}` | No | Get municipality |
+| PUT | `/api/municipios/{id}` | No | Update municipality |
+| PATCH | `/api/municipios/{id}` | No | Update municipality |
+| DELETE | `/api/municipios/{id}` | No | Delete municipality |
+
+### Module: Departamentos (Departments/States)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/departamentos` | No | List departments |
+| POST | `/api/departamentos` | No | Create department |
+| GET | `/api/departamentos/{id}` | No | Get department |
+| PUT | `/api/departamentos/{id}` | No | Update department |
+| PATCH | `/api/departamentos/{id}` | No | Update department |
+| DELETE | `/api/departamentos/{id}` | No | Delete department |
+
+### Module: Paises (Countries)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/paises` | No | List countries |
+| POST | `/api/paises` | No | Create country |
+| GET | `/api/paises/{id}` | No | Get country |
+| PUT | `/api/paises/{id}` | No | Update country |
+| PATCH | `/api/paises/{id}` | No | Update country |
+| DELETE | `/api/paises/{id}` | No | Delete country |
+
+### Module: Conjuntos Tipos (Complex Types)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/conjuntos-tipos` | No | List complex types |
+| POST | `/api/conjuntos-tipos` | No | Create complex type |
+| GET | `/api/conjuntos-tipos/{id}` | No | Get complex type |
+| PUT | `/api/conjuntos-tipos/{id}` | No | Update complex type |
+| PATCH | `/api/conjuntos-tipos/{id}` | No | Update complex type |
+| DELETE | `/api/conjuntos-tipos/{id}` | No | Delete complex type |
+
+### Module: Conjuntos Estados (Complex States)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/conjuntos-estados` | No | List complex states |
+| POST | `/api/conjuntos-estados` | No | Create complex state |
+| GET | `/api/conjuntos-estados/{id}` | No | Get complex state |
+| PUT | `/api/conjuntos-estados/{id}` | No | Update complex state |
+| PATCH | `/api/conjuntos-estados/{id}` | No | Update complex state |
+| DELETE | `/api/conjuntos-estados/{id}` | No | Delete complex state |
+
+### Module: Unidades Estados (Unit States/Occupation Status)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/unidades-estados` | No | List unit states |
+| POST | `/api/unidades-estados` | No | Create unit state |
+| GET | `/api/unidades-estados/{id}` | No | Get unit state |
+| PUT | `/api/unidades-estados/{id}` | No | Update unit state |
+| PATCH | `/api/unidades-estados/{id}` | No | Update unit state |
+| DELETE | `/api/unidades-estados/{id}` | No | Delete unit state |
+
+### Module: Users Estados (User States)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/users-estados` | No | List user states |
+| POST | `/api/users-estados` | No | Create user state |
+| GET | `/api/users-estados/{id}` | No | Get user state |
+| PUT | `/api/users-estados/{id}` | No | Update user state |
+| PATCH | `/api/users-estados/{id}` | No | Update user state |
+| DELETE | `/api/users-estados/{id}` | No | Delete user state |
+
+### Module: Unidades Ocupantes (Unit Occupants)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/unidades-ocupantes` | No | List unit occupants |
+| POST | `/api/unidades-ocupantes` | No | Create unit occupant |
+| GET | `/api/unidades-ocupantes/{id}` | No | Get unit occupant |
+| PUT | `/api/unidades-ocupantes/{id}` | No | Update unit occupant |
+| PATCH | `/api/unidades-ocupantes/{id}` | No | Update unit occupant |
+| DELETE | `/api/unidades-ocupantes/{id}` | No | Delete unit occupant |
+
+### Module: Conjuntos Usuarios (Complex-User Relationships)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/conjuntos-usuarios` | No | List complex-user links |
+| POST | `/api/conjuntos-usuarios` | No | Link user to complex |
+| GET | `/api/conjuntos-usuarios/{id}` | No | Get complex-user link |
+| PUT | `/api/conjuntos-usuarios/{id}` | No | Update complex-user link |
+| PATCH | `/api/conjuntos-usuarios/{id}` | No | Update complex-user link |
+| DELETE | `/api/conjuntos-usuarios/{id}` | No | Delete complex-user link |
+
+### Module: Usuarios (Users)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/usuarios` | No | List users |
+| POST | `/api/usuarios` | No | Create user |
+| GET | `/api/usuarios/{id}` | No | Get user |
+| PUT | `/api/usuarios/{id}` | No | Update user |
+| PATCH | `/api/usuarios/{id}` | No | Update user |
+| DELETE | `/api/usuarios/{id}` | No | Delete user |
+
+### Module: Users Tipos Documentos (User Document Types)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/users-tipos-documentos` | No | List document types |
+| POST | `/api/users-tipos-documentos` | No | Create document type |
+| GET | `/api/users-tipos-documentos/{id}` | No | Get document type |
+| PUT | `/api/users-tipos-documentos/{id}` | No | Update document type |
+| PATCH | `/api/users-tipos-documentos/{id}` | No | Update document type |
+| DELETE | `/api/users-tipos-documentos/{id}` | No | Delete document type |
+
+### Module: Roles
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/roles` | No | List roles |
+| POST | `/api/roles` | No | Create role |
+| GET | `/api/roles/{id}` | No | Get role |
+| PUT | `/api/roles/{id}` | No | Update role |
+| PATCH | `/api/roles/{id}` | No | Update role |
+| DELETE | `/api/roles/{id}` | No | Delete role |
+
+### Module: Roles Permisos (Role-Permission Assignments)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/roles-permisos` | No | List role-permissions |
+| POST | `/api/roles-permisos` | No | Assign permission to role |
+| GET | `/api/roles-permisos/{id}` | No | Get role-permission |
+| PUT | `/api/roles-permisos/{id}` | No | Update role-permission |
+| PATCH | `/api/roles-permisos/{id}` | No | Update role-permission |
+| DELETE | `/api/roles-permisos/{id}` | No | Delete role-permission |
+
+### Module: Parametros Conjuntos (Complex Parameters)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/parametros-conjuntos` | No | List complex params |
+| POST | `/api/parametros-conjuntos` | No | Create complex param |
+| GET | `/api/parametros-conjuntos/{id}` | No | Get complex param |
+| PUT | `/api/parametros-conjuntos/{id}` | No | Update complex param |
+| PATCH | `/api/parametros-conjuntos/{id}` | No | Update complex param |
+| DELETE | `/api/parametros-conjuntos/{id}` | No | Delete complex param |
+
+### Module: Conceptos Cobro (Billing Concepts)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/conceptos-cobro` | No | List billing concepts |
+| POST | `/api/conceptos-cobro` | No | Create billing concept |
+| GET | `/api/conceptos-cobro/{id}` | No | Get billing concept |
+| PUT | `/api/conceptos-cobro/{id}` | No | Update billing concept |
+| PATCH | `/api/conceptos-cobro/{id}` | No | Update billing concept |
+| DELETE | `/api/conceptos-cobro/{id}` | No | Delete billing concept |
+
+### Module: Categorias Conceptos (Concept Categories)
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/categorias-conceptos` | No | List concept categories |
+| POST | `/api/categorias-conceptos` | No | Create concept category |
+| GET | `/api/categorias-conceptos/{id}` | No | Get concept category |
+| PUT | `/api/categorias-conceptos/{id}` | No | Update concept category |
+| PATCH | `/api/categorias-conceptos/{id}` | No | Update concept category |
+| DELETE | `/api/categorias-conceptos/{id}` | No | Delete concept category |
+
+### Auth Endpoint
+
+| Method | URI | Auth Required | Description |
+|--------|-----|---------------|-------------|
+| GET | `/api/user` | **YES** | Get authenticated user |
+
+---
+
+## Endpoint Examples
+
+### GET /api/usuarios (List Users)
+
+**Request:**
+```
+GET /api/usuarios
+Content-Type: application/json
+Accept: application/json
+```
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| per_page | integer | varies | Items per page (1-100) |
+| page | integer | 1 | Page number |
+
+**Success Response (200):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "documento": "12345678",
+      "telefono": "+573001234567",
+      "foto_url": "https://example.com/photos/1.jpg",
+      "estado": true,
+      "ultimo_acceso": "2026-05-21T10:30:00+00:00",
+      "tipo_documento_id": 1,
+      "rol_id": 2,
+      "users_estado_id": 1
+    }
+  ],
+  "links": {
+    "first": "http://localhost/api/usuarios?page=1",
+    "last": "http://localhost/api/usuarios?page=5",
+    "prev": null,
+    "next": "http://localhost/api/usuarios?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 5,
+    "per_page": 15,
+    "to": 15,
+    "total": 72
+  }
+}
+```
+
+### GET /api/usuarios/{id} (Get Single User)
+
+**Request:**
+```
+GET /api/usuarios/1
+Content-Type: application/json
+Accept: application/json
+```
+
+**Success Response (200):**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "documento": "12345678",
+    "telefono": "+573001234567",
+    "foto_url": "https://example.com/photos/1.jpg",
+    "estado": true,
+    "ultimo_acceso": "2026-05-21T10:30:00+00:00",
+    "tipo_documento_id": 1,
+    "rol_id": 2,
+    "users_estado_id": 1
+  }
+}
+```
+
+### POST /api/usuarios (Create User)
+
+**Request:**
+```
+POST /api/usuarios
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "securepassword123",
+  "password_confirmation": "securepassword123",
+  "documento": "87654321",
+  "telefono": "+573009876543",
+  "tipo_documento_id": 1,
+  "rol_id": 2,
+  "users_estado_id": 1
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "data": {
+    "id": 2,
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "documento": "87654321",
+    "telefono": "+573009876543",
+    "foto_url": null,
+    "estado": null,
+    "ultimo_acceso": null,
+    "tipo_documento_id": 1,
+    "rol_id": 2,
+    "users_estado_id": 1
+  }
+}
+```
+
+### PUT /api/usuarios/{id} (Update User)
+
+**Request:**
+```
+PUT /api/usuarios/2
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "documento": "87654321",
+  "tipo_documento_id": 1,
+  "rol_id": 2,
+  "users_estado_id": 1
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "data": {
+    "id": 2,
+    "name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "documento": "87654321",
+    "telefono": "+573009876543",
+    "foto_url": null,
+    "estado": null,
+    "ultimo_acceso": null,
+    "tipo_documento_id": 1,
+    "rol_id": 2,
+    "users_estado_id": 1
+  }
+}
+```
+
+### DELETE /api/usuarios/{id} (Delete User)
+
+**Request:**
+```
+DELETE /api/usuarios/2
+Accept: application/json
+```
+
+**Success Response (204):**
+```
+No Content
+```
+
+### POST /api/conjuntos (Create Complex)
+
+**Request:**
+```
+POST /api/conjuntos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombre_conjunto": "Torres de San Felipe",
+  "nit_conjunto": "901234567-8",
+  "direccion_conjunto": "Calle 100 #45-67",
+  "telefono_conjunto": "+6015551234",
+  "estrato_conjunto": 5,
+  "coeficiente_total_conjunto": 1000.00,
+  "datos_bancarios_conjunto": "Banco de Bogotá - Cuenta 123456789",
+  "reglamento_url_conjunto": "https://example.com/reglamento.pdf",
+  "logo_url_conjunto": "https://example.com/logo.png",
+  "portada_url_conjunto": "https://example.com/portada.jpg",
+  "estado_conjunto": true,
+  "conjunto_tipo_id": 1,
+  "conjunto_estado_id": 1,
+  "municipio_id": 1
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "data": {
+    "id": 1,
+    "nombre_conjunto": "Torres de San Felipe",
+    "nit_conjunto": "901234567-8",
+    "direccion_conjunto": "Calle 100 #45-67",
+    "telefono_conjunto": "+6015551234",
+    "estrato_conjunto": 5,
+    "coeficiente_total_conjunto": 1000.00,
+    "datos_bancarios_conjunto": "Banco de Bogotá - Cuenta 123456789",
+    "reglamento_url_conjunto": "https://example.com/reglamento.pdf",
+    "logo_url_conjunto": "https://example.com/logo.png",
+    "portada_url_conjunto": "https://example.com/portada.jpg",
+    "galeria_conjunto": null,
+    "estado_conjunto": true,
+    "conjunto_tipo_id": 1,
+    "conjunto_estado_id": 1,
+    "municipio_id": 1
+  }
+}
+```
+
+### POST /api/unidades (Create Unit)
+
+**Request:**
+```
+POST /api/unidades
+Content-Type: application/json
+Accept: application/json
+
+{
+  "numero_unidad": "101",
+  "codigo_unidad": "TOR1-101",
+  "piso_unidad": 1,
+  "area_m2_unidad": 85.5,
+  "coeficiente_unidad": 0.0085,
+  "estado_unidad": true,
+  "bloque_id": 1,
+  "conjunto_id": 1,
+  "estado_ocupacion_id": 1
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "data": {
+    "id": 1,
+    "numero_unidad": "101",
+    "codigo_unidad": "TOR1-101",
+    "piso_unidad": 1,
+    "area_m2_unidad": 85.5,
+    "coeficiente_unidad": 0.0085,
+    "estado_unidad": true,
+    "bloque_id": 1,
+    "conjunto_id": 1,
+    "estado_ocupacion_id": 1
+  }
+}
+```
+
+### GET /api/user (Get Authenticated User)
+
+**Request:**
+```
+GET /api/user
+Authorization: Bearer {token}
+Accept: application/json
+```
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+---
+
+## Models & Schemas
+
+### Core Models
+
+#### Users
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| name | string | required, max:255 | Full name |
+| email | string | required, unique, email | Email address |
+| email_verified_at | datetime | nullable | Email verification timestamp |
+| password | string | required (hashed) | Hashed password |
+| remember_token | string | nullable | Remember me token |
+| documento | string | required, max:50 | ID document number |
+| telefono | string | nullable, max:30 | Phone number |
+| foto_url | string | nullable, max:500 | Profile photo URL |
+| estado | boolean | nullable | Active status |
+| ultimo_acceso | datetime | nullable | Last access timestamp |
+| tipo_documento_id | integer | FK | Reference to document types |
+| rol_id | integer | FK | Reference to roles |
+| users_estado_id | integer | FK | Reference to user states |
+| created_at | datetime | auto | Creation timestamp |
+| updated_at | datetime | auto | Update timestamp |
+| deleted_at | datetime | nullable | Soft delete timestamp |
+
+**Hidden Fields:** `password`, `remember_token`
+
+#### TblConjuntos (Complexes/Communities)
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| nombre_conjunto | string | required | Complex name |
+| nit_conjunto | string | required | Tax ID |
+| direccion_conjunto | string | nullable | Address |
+| telefono_conjunto | string | nullable | Phone |
+| estrato_conjunto | integer | nullable | Stratum (1-6) |
+| coeficiente_total_conjunto | float | nullable | Total coefficient |
+| datos_bancarios_conjunto | string | nullable | Bank account info |
+| reglamento_url_conjunto | string | nullable, max:500 | Regulations PDF URL |
+| logo_url_conjunto | string | nullable, max:500 | Logo URL |
+| portada_url_conjunto | string | nullable, max:500 | Cover image URL |
+| galeria_conjunto | string | nullable | Gallery images JSON |
+| estado_conjunto | boolean | nullable | Active status |
+| conjunto_tipo_id | integer | FK | Complex type |
+| conjunto_estado_id | integer | FK | Complex state |
+| municipio_id | integer | FK | Municipality |
+| created_at | datetime | auto | Creation timestamp |
+| updated_at | datetime | auto | Update timestamp |
+
+#### TblUnidades (Units/Apartments)
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| numero_unidad | string | required | Unit number (e.g., "101") |
+| codigo_unidad | string | nullable | Internal code |
+| piso_unidad | integer | nullable | Floor number |
+| area_m2_unidad | decimal | nullable | Area in square meters |
+| coeficiente_unidad | decimal | nullable | Unit coefficient |
+| estado_unidad | boolean | nullable | Active status |
+| bloque_id | integer | FK | Block/Wing reference |
+| conjunto_id | integer | FK | Complex reference |
+| estado_ocupacion_id | integer | FK | Occupation state |
+| created_at | datetime | auto | Creation timestamp |
+| updated_at | datetime | auto | Update timestamp |
+
+#### TblBloques (Blocks/Wings)
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| nombre_bloque | string | required | Block name |
+| descripcion_bloque | string | nullable, max:500 | Description |
+| numero_unidades_bloque | integer | nullable | Total units in block |
+| orden_bloque | integer | nullable | Display order |
+| estado_bloque | boolean | nullable | Active status |
+| conjunto_id | integer | FK | Complex reference |
+| created_at | datetime | auto | Creation timestamp |
+| updated_at | datetime | auto | Update timestamp |
+
+#### TblRoles (Roles)
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| nombre_rol | string | required | Role name |
+| codigo_rol | string | required | Role code (unique) |
+| descripcion_rol | string | nullable | Description |
+| nivel_rol | integer | nullable | Hierarchy level |
+| estado_rol | boolean | nullable | Active status |
+| created_at | datetime | auto | Creation timestamp |
+| updated_at | datetime | auto | Update timestamp |
+
+#### TblPermisos (Permissions)
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| codigo_permiso | string | nullable | Permission code |
+| nombre_permiso | string | required | Permission name |
+| modulo_permiso | string | required | Module name |
+| descripcion_permiso | string | nullable | Description |
+| created_at | datetime | auto | Creation timestamp |
+| updated_at | datetime | auto | Update timestamp |
+
+#### TblRolesPermisos (Role-Permission assignments)
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | integer | PK | Primary key |
+| rol_id | integer | FK | Role reference |
+| permiso_id | integer | FK | Permission reference |
+| created_at | datetime | auto | Creation timestamp |
+
+### Reference Tables
+
+#### TblUsersEstados (User States)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| nombre_useresta | string | required |
+| codigo_useresta | string | nullable |
+| descripcion_useresta | string | nullable |
+| orden_useresta | integer | nullable |
+| estado_useresta | boolean | nullable |
+
+#### TblUnidadesEstados (Unit States)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| nombre_unidesta | string | required |
+| codigo_unidesta | string | nullable |
+| descripcion_unidesta | string | nullable |
+| estado_unidesta | boolean | nullable |
+| orden_unidesta | integer | nullable |
+
+#### TblConjuntosEstados (Complex States)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| nombre_conjesta | string | required |
+| descripcion_conjesta | string | nullable |
+| orden_conjesta | integer | nullable |
+| estado_conjesta | boolean | nullable |
+
+#### TblConjuntosTipos (Complex Types)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| nombre_tipoconj | string | required |
+| descripcion_tipoconj | string | nullable |
+| estado_conest | boolean | nullable |
+
+#### TblUsersTiposDocumentos (Document Types)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| nombre_tipodocu | string | required |
+| codigo_tipodocu | string | nullable |
+| estado_tipodocu | boolean | nullable |
+
+### Geographic Tables
+
+#### TblPais (Countries)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| codigo_pais | string | nullable |
+| nombre_pais | string | required |
+| codigo_iso_pais | string | nullable |
+| estado_pais | boolean | nullable |
+
+#### TblDepartamentos (Departments/States)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| codigo_dane_departam | string | nullable |
+| nombre_departam | string | required |
+| estado_departam | boolean | nullable |
+| pais_id | integer | FK |
+
+#### TblMunicipios (Municipalities)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| codigo_dane_municipi | string | nullable |
+| nombre_municipi | string | required |
+| estado_municipi | boolean | nullable |
+| departamento_id | integer | FK |
+
+### Billing Tables
+
+#### TblCategoriasConceptos (Concept Categories)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| nombre_catconc | string | required |
+| codigo_catconc | string | nullable |
+| descripcion_catconc | string | nullable |
+| orden_catconc | integer | nullable |
+| estado_catconc | boolean | nullable |
+
+#### TblConceptosCobro (Billing Concepts)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| categoria_concepto_id | integer | FK |
+| codigo_concepto | string | required |
+| nombre_concepto | string | required |
+| descripcion_concepto | string | nullable |
+| valor_base_concepto | decimal | nullable |
+| periodicidad_concepto | string | nullable |
+| activo_concepto | boolean | nullable |
+
+### Configuration Tables
+
+#### TblParametrosSistema (System Parameters)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| codigo_param_sist | string | required |
+| nombre_param_sist | string | required |
+| valor_param_sist | string | nullable |
+| tipo_dato_param_sist | string | required |
+| descripcion_param_sist | string | nullable |
+| editable_param_sist | boolean | nullable |
+
+#### TblParametrosConjunto (Complex Parameters)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| parametro_sistema_id | integer | FK |
+| conjunto_id | integer | FK |
+| valor_param_conjunto | string | nullable |
+
+### Relationship Tables
+
+#### TblConjuntoUser (Complex-User Links)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| user_id | integer | FK |
+| conjunto_id | integer | FK |
+| fecha_vinculacion | datetime | nullable |
+| estado_conjuser | boolean | nullable |
+
+#### TblUnidadesOcupantes (Unit Occupants)
+| Field | Type | Constraints |
+|-------|------|-------------|
+| id | integer | PK |
+| tipo_ocupante | string | required |
+| es_titular | boolean | nullable |
+| fecha_inicio | datetime | required |
+| fecha_fin | datetime | nullable |
+| estado_ocupante | boolean | nullable |
+| observaciones | string | nullable |
+| unidad_id | integer | FK |
+| user_id | integer | FK |
+| conjunto_id | integer | FK |
+
+### Audit Tables
+
+#### TblAuditoriaLogs
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | PK |
+| user_id | integer | FK to users |
+| accion | string | Action performed |
+| tabla_afectada | string | Table affected |
+| registro_id | integer | Record ID |
+| datos_anteriores | json | Previous data |
+| datos_nuevos | json | New data |
+| ip_address | string | Client IP |
+| user_agent | string | Client user agent |
+
+#### TblAccesosLog
+| Field | Type | Description |
+|-------|------|-------------|
+| id | integer | PK |
+| user_id | integer | FK to users |
+| ip_address | string | Client IP |
+| fecha_hora_acceso | datetime | Access timestamp |
+
+---
+
+## Request/Response Formats
+
+### Standard Response Envelope
+
+All responses follow this structure:
+
+**Single Resource:**
+```json
+{
+  "data": { ... resource fields ... }
+}
+```
+
+**Collection:**
+```json
+{
+  "data": [ ... array of resources ... ],
+  "links": { ... pagination links ... },
+  "meta": { ... pagination metadata ... }
+}
+```
+
+### Request Body Format
+
+All POST/PUT/PATCH requests should send JSON:
+
+```json
+{
+  "field_name": "value",
+  "another_field": "another_value"
+}
+```
+
+### Field Naming Convention
+
+- Snake_case for all field names
+- Examples: `nombre_conjunto`, `codigo_unidad`, `users_estado_id`
+
+---
+
+## Error Handling
+
+### Error Response Format
+
+```json
+{
+  "message": "Error description here"
+}
+```
+
+### HTTP Status Codes
+
+| Code | Meaning | When Used |
+|------|---------|----------|
+| 200 | OK | Successful GET, PUT, PATCH |
+| 201 | Created | Successful POST |
+| 204 | No Content | Successful DELETE |
+| 400 | Bad Request | DomainException thrown |
+| 401 | Unauthorized | Missing/invalid auth token |
+| 403 | Forbidden | User lacks permission |
+| 404 | Not Found | ResourceNotFoundException, resource doesn't exist |
+| 422 | Unprocessable Entity | Validation errors |
+| 500 | Server Error | Unexpected errors |
+
+### Example Error Responses
+
+**404 Not Found:**
+```json
+{
+  "message": "Resource not found"
+}
+```
+
+**400 Bad Request (Domain Exception):**
+```json
+{
+  "message": "Invalid input data"
+}
+```
+
+**422 Validation Error (Laravel default):**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": ["The email field is required."],
+    "password": ["The password must be at least 8 characters."]
+  }
+}
+```
+
+**401 Unauthorized:**
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+---
+
+## Pagination
+
+### Pagination Format
+
+All list endpoints return Laravel's standard pagination format:
+
+```json
+{
+  "data": [ ... items ... ],
+  "links": {
+    "first": "http://localhost/api/usuarios?page=1",
+    "last": "http://localhost/api/usuarios?page=5",
+    "prev": null,
+    "next": "http://localhost/api/usuarios?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 5,
+    "per_page": 15,
+    "to": 15,
+    "total": 72
+  }
+}
+```
+
+### Pagination Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| per_page | integer | 15 | Items per page (1-100) |
+| page | integer | 1 | Page number |
+
+### Pagination Examples
+
+Get first 10 items:
+```
+GET /api/usuarios?per_page=10
+```
+
+Get page 3:
+```
+GET /api/usuarios?page=3
+```
+
+Get 5 items on page 2:
+```
+GET /api/usuarios?per_page=5&page=2
+```
+
+---
+
+## Relationships & Hierarchies
+
+### Entity Relationships
+
+```
+Pais (1) ───> (N) Departamento
+    │
+    └── pais_id
+
+Departamento (1) ───> (N) Municipio
+    │
+    └── departamento_id
+
+Municipio (1) ───> (N) TblConjuntos
+    │
+    └── municipio_id
+
+TblConjuntos (1) ───> (N) TblBloques
+    │
+    └── conjunto_id
+
+TblBloques (1) ───> (N) TblUnidades
+    │
+    └── bloque_id
+
+TblConjuntos (1) ───> (N) TblUnidades
+    │
+    └── conjunto_id
+
+TblUnidades (1) ───> (N) TblUnidadesOcupantes
+    │
+    └── unidad_id
+
+TblConjuntos (1) ───> (N) TblUnidadesOcupantes
+    │
+    └── conjunto_id
+
+TblConjuntos (1) ───> (N) TblParametrosConjunto
+    │
+    └── conjunto_id
+
+TblParametrosSistema (1) ───> (N) TblParametrosConjunto
+    │
+    └── parametro_sistema_id
+
+Users (N) ──── (M) TblConjuntos (via TblConjuntoUser)
+    │
+    └── conjunto_id, user_id
+
+TblConjuntos (1) ───> (N) TblConjuntosUsuarios
+    │
+    └── conjunto_id
+
+Users (1) ───> (N) TblConjuntosUsuarios
+    │
+    └── user_id
+
+TblUnidades (1) ───> (N) TblUnidadesEstados (estado_ocupacion_id)
+    │
+    └── estado_ocupacion_id
+
+TblConceptosCobro (N) ──── (1) TblCategoriasConceptos
+    │
+    └── categoria_concepto_id
+
+TblRoles (1) ───> (N) TblRolesPermisos
+    │
+    └── rol_id
+
+TblPermisos (1) ───> (N) TblRolesPermisos
+    │
+    └── permiso_id
+
+Users (1) ───> (N) TblUnidadesOcupantes
+    │
+    └── user_id
+```
+
+### Foreign Key References (Required IDs for Create/Update)
+
+| Entity | Required Foreign Keys |
+|--------|----------------------|
+| Users | tipo_documento_id, rol_id, users_estado_id |
+| TblConjuntos | conjunto_tipo_id, conjunto_estado_id, municipio_id |
+| TblUnidades | bloque_id, conjunto_id, estado_ocupacion_id |
+| TblBloques | conjunto_id |
+| TblDepartamentos | pais_id |
+| TblMunicipios | departamento_id |
+| TblParametrosConjunto | parametro_sistema_id, conjunto_id |
+| TblConceptosCobro | categoria_concepto_id |
+| TblConjuntoUser | user_id, conjunto_id |
+| TblUnidadesOcupantes | unidad_id, user_id, conjunto_id |
+| TblRolesPermisos | rol_id, permiso_id |
+
+---
+
+## Database Configuration
+
+From `.env.example`:
+```
+DB_CONNECTION=pgsql
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=urbania
+DB_USERNAME=
+DB_PASSWORD=
+```
+
+The API uses PostgreSQL as the primary database.
+
+---
+
+## Architecture Notes
+
+### Domain-Driven Design
+
+This API follows a DDD architecture pattern:
+
+```
+app/
+├── Domain/                    # Domain Layer
+│   ├── [Entity]/              # e.g., Usuario, Conjunto
+│   │   ├── Entities/          # Domain entities
+│   │   ├── Repositories/      # Repository interfaces
+│   │   └── ValueObjects/      # Value objects
+│   └── Common/Exceptions/     # Shared exceptions
+├── Application/               # Application Layer
+│   └── [Entity]/              # e.g., Usuario
+│       ├── DTOs/              # Data Transfer Objects
+│       └── Handlers/          # Command/Query handlers
+├── Http/
+│   ├── Controllers/Api/       # API Controllers
+│   ├── Requests/              # Form Request validation
+│   └── Resources/             # API Resources
+└── Models/                    # Eloquent Models (legacy/Reliese)
+```
+
+### Controller Pattern
+
+All API controllers follow this pattern:
+1. Validate request with Form Request class
+2. Delegate to Application Handler
+3. Return API Resource wrapped response
+4. Use standard HTTP status codes
+
+### Response Wrapping
+
+- Single resource: `UsuarioResource::make($entity)->response()`
+- Collection: `UsuarioResource::collection($paginator)->response()`
+- Creates: HTTP 201 with resource
+- Updates: HTTP 200 with resource
+- Deletes: HTTP 204 No Content
+
+---
+
+## Version Information
+
+- **Laravel:** 12.x
+- **PHP:** 8.2+
+- **Sanctum:** 4.x
+- **API Prefix:** `/api`
+- **Documentation:** Uses Dedoc/Scramble for OpenAPI generation
