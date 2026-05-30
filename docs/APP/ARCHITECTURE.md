@@ -15,7 +15,6 @@
 | Gestión de estado | Riverpod | ^2.x | Inyección de dependencias nativa, sin context |
 | Router | GoRouter | ^latest | Declarativo, deep linking, tipado fuerte |
 | HTTP Client | Dio | ^latest | Interceptors, cancel tokens |
-| Local DB (demo) | Hive + Drift | ^latest | Hive para sesión/settings, Drift para datos estructurados |
 | Local DB (prod) | Drift + Hive | ^latest | Drift principal, Hive caché ligera |
 | Seguridad | flutter_secure_storage | ^latest | Keychain/Keystore nativo |
 | Serialización | freezed + json_serializable | ^latest | Inmutabilidad + codegen automático. Requiere `part 'file.g.dart'` y `part 'file.freezed.dart'` |
@@ -23,12 +22,9 @@
 | Testing | flutter_test + mocktail | ^latest | Mocking sin boilerplate |
 | Functional Programming | fpdart | ^latest | Tipo Either para errores |
 | Auth Social | google_sign_in, flutter_facebook_auth, sign_in_with_apple | ^latest | OAuth 2.0 nativo |
-| Demo Data | faker | ^latest | Generación de datos mock realistas |
-| Local JWT (demo) | dart:convert | Built-in | Tokens locales para demo (base64Encode manual) |
 
 > **Regla de versiones**: Siempre última estable. Si hay conflicto, documentar en tabla con columna "Restricción" e intentar instalar la version que no genere conflicto siempre priorizando las librerias mas importantes.
-
-> **Modo Demo**: En demo, Dio está configurado pero no se usa. Los `FakeRepository` simulan latencia. Ver DEMO_SETUP.md.
+> **IMPORTANTE**: Consulta si hay reportados problemas de seguridad en librerias o frameworks. Si se encuentra alguna alerta de seguridad, se debe detener el proceso, informar la alerta y esperar instrucciones.
 
 ---
 
@@ -42,7 +38,6 @@
 │   ├── /network            # DioClient, NetworkInfo, ApiException
 │   ├── /database           # Drift config, DAOs, migrations
 │   ├── /storage            # HiveStorage, SecureStorage
-│   ├── /demo               # DemoData, DemoCredentials, FakeRepositories
 │   ├── /errors             # Failure (sealed class), ErrorHandler
 │   ├── /utils              # Extensions, Helpers, Validators
 │   ├── /theme              # AppTheme, AppColors, AppTypography
@@ -55,7 +50,6 @@
 │   ├── /data
 │   │   ├── /models
 │   │   ├── /datasources
-│   │   │   ├── /fake       # FakeAuthDatasource (demo)
 │   │   │   └── /remote     # RemoteAuthDatasource (futuro)
 │   │   └── /repositories
 │   └── /presentation
@@ -78,9 +72,8 @@
 ### Principios
 - Cada directorio en `/lib` (excepto `core` y `shared`) = **funcionalidad de negocio completa**
 - **Ningún feature importa de otro feature**. Comunicación solo a través de `core/` o estado global Riverpod
-- `core/` = todo lo transversal: networking, database, demo, errores, tema, router, utilidades
+- `core/` = todo lo transversal: networking, database, errores, tema, router, utilidades
 - `shared/` = widgets y utilidades reutilizables entre múltiples features
-- `core/demo/` = **solo para modo demo**. Contiene datos mock, fake repositories, credenciales demo. Fácilmente eliminable para producción.
 
 ---
 
@@ -98,7 +91,6 @@ Presentation -> Domain <- Data
 - **NUNCA** una capa superior importa de una inferior
 - **NUNCA** un feature importa de otro feature
 - **NUNCA** `core/` importa de ningún feature
-- **NUNCA** `domain/` importa de `core/demo/` (demo es solo implementación en data/)
 
 ---
 
@@ -144,10 +136,6 @@ class BusinessLogicFailure extends Failure {
   const BusinessLogicFailure(String message) : super(message);
 }
 
-// Errores específicos para demo
-class DemoModeFailure extends Failure {
-  const DemoModeFailure(String message) : super(message);
-}
 ```
 
 ---
@@ -184,69 +172,10 @@ class AuthController extends _$AuthController {
 
 ---
 
-## 6. Configuración de Dio (Singleton) - Preparado para Demo
-
-```dart
-// /core/network/dio_client.dart
-import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-class DioClient {
-  static Dio? _instance;
-  static bool _isDemoMode = true; // Flag para modo demo
-
-  static Dio get instance {
-    _instance ??= _createDio();
-    return _instance!;
-  }
-
-  static void setDemoMode(bool isDemo) => _isDemoMode = isDemo;
-
-  static Dio _createDio() {
-    final dio = Dio(BaseOptions(
-      baseUrl: _isDemoMode 
-        ? 'https://demo.local' // No se usa realmente en demo
-        : 'https://urbaniaapi.tuapp.com/v1',
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {'Content-Type': 'application/json'},
-    ));
-
-    dio.interceptors.addAll([
-      AuthInterceptor(),
-      LogInterceptor(requestBody: true, responseBody: true),
-    ]);
-
-    return dio;
-  }
-}
-
-class AuthInterceptor extends Interceptor {
-  final _storage = const FlutterSecureStorage();
-
-  @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _storage.read(key: 'jwt_token');
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-    handler.next(options);
-  }
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      await const FlutterSecureStorage().delete(key: 'jwt_token');
-      // GoRouter redirigirá a login automáticamente
-    }
-    handler.next(err);
-  }
-}
-```
 
 ---
 
-## 7. Configuración de Base de Datos Local (Drift)
+## 6. Configuración de Base de Datos Local (Drift)
 
 ```dart
 // /core/database/app_database.dart
@@ -265,13 +194,60 @@ class AppDatabase extends _$AppDatabase {
   static QueryExecutor _openConnection() {
     return driftDatabase(name: 'urbania_database');
   }
-
-  // Seeding de datos demo
-  Future<void> seedDemoData() async {
-    // Implementar en DEMO_SETUP.md
-  }
 }
 ```
+
+
+
+---
+
+## 7. Modo Mock (Desarrollo Local)
+
+### Configuración
+
+El modo mock se controla mediante la variable de entorno `USE_MOCK` en `.env`:
+
+```
+USE_MOCK=true   # Activa modo mock (datos locales)
+USE_MOCK=false  # Usa API real
+```
+
+### Arquitectura de Datasources
+
+```
+/lib
+├── /core
+│   └── /network
+│       ├── /datasources
+│       │   ├── /interfaces       # Contratos de datasource
+│       │   ├── /mock           # Implementaciones mock
+│       │   └── /api            # Implementaciones API real
+│       └── dio_client.dart
+```
+
+### Inyección Condicional
+
+```dart
+// /core/network/datasource_provider.dart
+final authDatasourceProvider = Provider<AuthDatasource>((ref) {
+  final useMock = dotenv.env['USE_MOCK']?.toLowerCase() == 'true';
+
+  if (useMock) {
+    return MockAuthDatasource();
+  }
+
+  return ApiAuthDatasource(ref.read(dioClientProvider));
+});
+```
+
+### Reglas
+
+- `MockDatasource` y `ApiDatasource` implementan la **misma interfaz**
+- **Zero cambios** en domain/, presentation/ ni widgets
+- Los datos mock son **realistas** y cubren casos de uso principales
+- El cambio de modo no requiere recompilación
+
+---
 
 ---
 
@@ -282,7 +258,6 @@ Cada feature DEBE incluir:
 - Unit tests para repositories (mock datasource)
 - Widget tests para screens principales
 - Mock de datasources con mocktail
-- Tests de integración para flujo demo (login -> dashboard -> feature)
 
 ---
 

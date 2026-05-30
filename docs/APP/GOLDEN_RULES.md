@@ -22,7 +22,6 @@ Presentation -> Domain <- Data
 - **NUNCA** una capa superior importa de una inferior
 - **NUNCA** un feature importa de otro feature
 - **NUNCA** `core/` importa de ningún feature
-- **NUNCA** `domain/` importa de `core/demo/`
 
 ## 3. Responsabilidad Única
 - Ninguna clase hace más de una cosa
@@ -67,17 +66,12 @@ Presentation -> Domain <- Data
 - Actualizar FEATURES_INDEX cuando se agrega/modifica un feature
 - Documentar decisiones técnicas no obvias en comentarios de código
 
-## 11. Demo-Ready
-- Todo feature debe funcionar sin API backend
-- Usar `FakeRepository` con datos mock y persistencia local
-- Simular latencia de red (300-800ms) para UX realista
-
-## 12. Migración-Transparente
-- `FakeRepository` debe ser intercambiable por `RemoteRepository` sin tocar `domain/`
+## 11. Migración-Transparente
+- `MockRepository` debe ser intercambiable por `ApiRepository` sin tocar `domain/`
 - Interfaces de repository definidas en `domain/`, implementaciones en `data/`
-- Preparar `RemoteDatasource` con mismas interfaces que `FakeDatasource`
+- Preparar `ApiDatasource` con mismas interfaces que `MockDatasource`
 
-## 13. Flujo de Inicio de la Aplicación
+## 12. Flujo de Inicio de la Aplicación
 - La app **siempre inicia en `/login`** (no en `/splash`)
 - **CRÍTICO**: El redirect de GoRouter debe usar `refreshListenable` con un `ChangeNotifier` que escuche el auth state. Ver ROUTING.md para el patrón correcto.
 - No hay splash screen separada; el loading se maneja en la pantalla de login
@@ -95,8 +89,6 @@ Presentation -> Domain <- Data
 - ❌ No usar `BuildContext` fuera de la capa de presentación
 - ❌ No hardcodear strings (usar `AppConstants` o localización)
 - ❌ No hardcodear colores fuera de `AppColors`
-- ❌ No dejar datos mock en producción (usar `--dart-define=DEMO_MODE=false`)
-- ❌ No usar credenciales demo en builds de release
 
 ---
 
@@ -110,8 +102,7 @@ Presentation -> Domain <- Data
 | Constantes | camelCase | `apiBaseUrl`, `maxRetryAttempts` |
 | Enums | PascalCase valores | `enum AuthStatus { authenticated, unauthenticated }` |
 | Directorios de feature | snake_case | `/auth`, `/reservations`, `/notifications` |
-| Fake classes | Fake + nombre | `FakeAuthRepository`, `FakeReservationDatasource` |
-| Demo files | demo_ prefix | `demo_data.dart`, `demo_credentials.dart` |
+| Mock classes | Mock + nombre | `MockAuthRepository`, `MockReservationDatasource` |
 
 ---
 

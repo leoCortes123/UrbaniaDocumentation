@@ -1,7 +1,9 @@
-# 📚 URBANIA - AGENTS_GUIDE
+# 📚 URBANIA APP - AGENTS_GUIDE
 ## Documento Principal de Referencia Rápida
 
 > **Instrucción para el agente**: Lee este documento SIEMPRE al inicio de cada tarea. Es tu mapa de navegación. Extrae las reglas de oro. Luego consulta la fase específica según el tipo de tarea.
+
+> ** Inicia un nuevo ssd para el proyecto en modo automatico y con persistencia en engram **
 
 ---
 
@@ -35,13 +37,11 @@ Ingeniero senior Flutter. Construir app para residentes de propiedades horizonta
 | 6 | **ROUTING** | Si la tarea involucra navegación |
 | 7 | **FEATURES_INDEX** | Si es un feature nuevo o modificación |
 | 8 | **DEVELOPMENT_GUIDE** | Antes de empezar a codear |
-| 9 | **DEMO_SETUP** | Si es configuración o datos de demo |
 
 ### Fases de Referencia (Solo consultar cuando aplique)
 
 | Orden | Documento | Cuándo consultar |
 |-------|-----------|------------------|
-| 10 | **API_CONTRACT** | Solo para referencia futura (modo demo activo) |
 | 11 | **Feature Spec** | Específico del feature a implementar (ver carpeta `features/[feature]/`) |
 
 ---
@@ -51,7 +51,7 @@ Ingeniero senior Flutter. Construir app para residentes de propiedades horizonta
 ### Implementar feature nuevo:
 ```
 AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → THEME_SYSTEM → ALERT_SYSTEM → FEATURES_INDEX →
-DEVELOPMENT_GUIDE → DEMO_SETUP → /docs/features/[feature]/[feature].md
+DEVELOPMENT_GUIDE → /docs/features/[feature]/[feature].md
 ```
 
 ### Modificar feature existente:
@@ -66,8 +66,6 @@ AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → THEME
 ALERT_SYSTEM → DEVELOPMENT_GUIDE
 ```
 
-> **IMPORTANTE**: Antes de implementar cualquier pantalla, revisa los recursos de diseño en `/docs/features/[feature]/recursos/code.html`. Este archivo es la fuente visual de verdad.
-
 ### Agregar/modificar ruta:
 ```
 AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → ROUTING → DEVELOPMENT_GUIDE
@@ -75,7 +73,7 @@ AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → ROUTI
 
 ### Setup inicial del proyecto:
 ```
-AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → DEVELOPMENT_GUIDE → DEMO_SETUP
+AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → DEVELOPMENT_GUIDE
 ```
 
 ---
@@ -92,8 +90,7 @@ AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → DEVEL
 8. **UI desacoplada**: Lógica de negocio en `domain` o `providers`, nunca en widgets
 9. **Alertas estandarizadas**: Todo mensaje al usuario DEBE usar el sistema de alertas. No SnackBar/AlertDialog/Toast directos
 10. **Documentación viva**: Completar secciones `** Pendiente **` con código real de tu implementación
-11. **Demo-ready**: Todo feature debe funcionar sin API (datos mock + persistencia local)
-12. **Migración-transparente**: FakeRepository debe ser intercambiable por RemoteRepository sin tocar domain/
+12. **Migración-transparente**: MockRepository debe ser intercambiable por ApiRepository sin tocar domain/
 
 ---
 
@@ -111,24 +108,74 @@ AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → DEVEL
 - [ ] Escribí tests para use cases, repositories y widgets principales
 - [ ] Completé las secciones `** Pendiente **` en los docs correspondientes
 - [ ] Actualicé FEATURES_INDEX si fue necesario
-- [ ] Verifiqué que el feature funciona en modo demo (sin API)
-- [ ] Agregué datos mock en `core/demo/demo_data.dart` si aplica
+
 
 ---
 
-## 🆕 MODO DEMO / OFFLINE-FIRST
+## 🧪 Modo Mock
 
-> **Contexto**: La app actual se ejecuta en **modo demo** sin API backend. Todos los datos son locales (Hive/Drift). La arquitectura está preparada para migrar a API real sin cambios en capas superiores.
+El proyecto incluye un **Modo Mock** para desarrollo y pruebas locales sin necesidad de conectar a la base de datos o API.
 
-### Estrategia de Demo
-- **Capa de datos**: Implementa `FakeRepository` que simula latencia de red (300-800ms) y retorna datos mock
-- **Persistencia local**: Hive para caché de sesión y preferencias; Drift (SQLite) para datos estructurados de negocio
-- **Autenticación**: Credenciales hardcodeadas solo para demo (ver DEMO_SETUP.md)
-- **Datos mock**: Generados en `core/demo/demo_data.dart` con faker
-- **Sync simulation**: Los `FakeRepository` simulan éxito/error controlado para probar manejo de errores
+### Configuración
+
+Crear un archivo `.env` en la raíz del proyecto:
+
+```
+USE_MOCK=true
+```
+
+| Variable | Valor | Descripción |
+|----------|-------|-------------|
+| `USE_MOCK` | `true` | Activa el modo mock. Usa datos locales simulados. |
+| `USE_MOCK` | `false` | Desactiva el modo mock. Usa la API real configurada. |
+
+### Comportamiento
+
+- **Modo Mock activo (`USE_MOCK=true`)**: Todos los repositorios inyectan `MockDatasource` en lugar de `ApiDatasource`. Los datos son locales, deterministas y no requieren conexión de red.
+- **Modo Mock desactivo (`USE_MOCK=false`)**: Los repositorios inyectan `ApiDatasource` y se conectan al backend real.
+
+### Implementación
+
+En `main.dart`:
+
+```dart
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+
+  final useMock = dotenv.env['USE_MOCK']?.toLowerCase() == 'true';
+
+  // ... resto de inicialización
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        if (useMock) ...[
+          authDatasourceProvider.overrideWithValue(MockAuthDatasource()),
+          // Overrides para otros datasources mock
+        ],
+      ],
+      child: const UrbaniaApp(),
+    ),
+  );
+}
+```
+
+### Reglas de Oro para Modo Mock
+
+1. **MockDatasource** debe implementar la **misma interfaz** que **ApiDatasource**
+2. **Zero cambios** en `domain/`, `presentation/` ni widgets al cambiar el modo
+3. Los datos mock deben ser **realistas** y cubrir los casos de uso principales
+4. El modo mock debe poder activarse/desactivarse **sin recompilar** (solo cambiando `.env`)
+
+---
+
+---
 
 ### Migración Futura a API Real
-1. Crear `RemoteDatasource` que implemente las mismas interfaces que `FakeDatasource`
+1. Crear `ApiDatasource` que implemente las mismas interfaces que `MockDatasource`
 2. Reemplazar inyección en `ProviderScope` overrides
 3. Agregar `NetworkInfo` para decidir entre local/remote
 4. **Zero cambios** en domain/, presentation/, ni widgets
@@ -147,16 +194,15 @@ AGENTS_GUIDE → DIRECTORY_STRUCTURE → GOLDEN_RULES → ARCHITECTURE → DEVEL
 ├── ROUTING.md               ← Navegación, rutas, GoRouter
 ├── FEATURES_INDEX.md        ← Catálogo de features y estado
 ├── DEVELOPMENT_GUIDE.md     ← Setup, flujo de trabajo, convenciones
-├── DEMO_SETUP.md            ← Modo offline, credenciales, mock data
 ├── API_CONTRACT.md          ← Referencia futura (backend)
 ├── DIRECTORY_STRUCTURE.md   ← Guía de organización de carpetas
 └── /features/
     ├── /auth/
     │   ├── auth.md            ← Spec completo del feature
-    │   └── /recursos/         ← Recursos adiconales de diseño si son necesarios
+    │   └── /recursos/         ← Recursos adicionales de diseño si son necesarios
     ├── /home/
     │   ├── home.md            ← Spec completo del feature
-    │   └── /recursos/         ← Recursos adiconales de diseño si son necesarios
+    │   └── /recursos/         ← Recursos adicionales de diseño si son necesarios
     ├── /profile/              ← (Pendiente)
     ├── /reservations/         ← (Pendiente)
     ├── /payments/             ← (Pendiente)

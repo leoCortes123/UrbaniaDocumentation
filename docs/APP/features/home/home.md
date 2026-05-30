@@ -1,329 +1,213 @@
-# HomeScreen — Especificación de Diseño
-
 ## 1. Meta
 
-- **Objetivo**: Pantalla principal que muestra saludo al usuario, notificaciones rápidas, accesos directos a módulos principales y navegación inferior.
-- **Usuario objetivo**: Residentes/propietarios de la unidad inmobiliaria.
-- **Contexto de uso**: Punto de entrada default tras login. Acceso frecuente para consultar pagos, visitas, reservas y notificaciones.
-- **Rol en el sistema**: Hub central estático (sin scroll).
+* **Objetivo**: Pantalla principal que muestra saludo al usuario, notificaciones rápidas, accesos directos a módulos principales y navegación inferior.
+* **Usuario objetivo**: Residentes/propietarios de la unidad inmobiliaria.
+* **Contexto de uso**: Punto de entrada por defecto después del login.
+* **Rol en el sistema**: Hub central estático sin scroll.
 
 ---
 
-## 2. Estructura Visual
+## 2. Jerarquía Visual
 
-### Layout General
+Orden de importancia visual:
 
-- Sin scroll general — pantalla completamente estática.
-- SafeArea obligatorio en todos los bordes.
-- Sin bordes visibles entre secciones.
-- Fondo con patrones orgánicos/irregulares (blob shapes) para separar visualmente las áreas.
+1. Notificación activa del carrusel.
+2. Saludo del usuario.
+3. Accesos rápidos.
+4. Bottom Navigation Bar.
 
-### Distribución Vertical
-
-| Sección | Altura | Descripción |
-|---------|--------|-------------|
-| Banner principal | 25% | Saludo + foto perfil |
-| Carrusel notificaciones | 25% | Tarjetas horizontales |
-| Navegación principal | 40% | Grid de accesos rápidos |
-| Bottom navigation bar | 10% (Fija) | 4 vínculos a módulos |
-
-### Responsive
-
-- **Móvil**: Distribución por defecto (4 secciones verticales).
+La atención visual debe dirigirse primero al carrusel activo.
 
 ---
 
-## 3. Design Tokens Aplicados
+## 3. Estilo Visual
 
-### Colores
+### Principios
 
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `colorPrimary` | — | Texto de bienvenida, iconos activos |
-| `colorOnPrimary` | — | Texto sobre color primario |
-| `colorSurface` | — | Fondo general de pantalla |
-| `colorSurfaceContainer` | — | Tarjetas del carrusel |
-| `colorOnSurface` | — | Texto principal de notificaciones |
-| `colorOnSurfaceVariant` | — | Texto secundario (fecha, tipo) |
-| `colorOutline` | — | Bordes de tarjetas |
-| `colorBackground` | — | Fondo general |
-
-### Tipografía
-
-| Token | Uso |
-|-------|-----|
-| `headlineLarge` | Saludo principal ("¡Hola, [Nombre]!") |
-| `titleMedium` | Título de tarjeta de notificación |
-| `bodyMedium` | Cuerpo de notificación |
-| `bodySmall` | Tipo y fecha de notificación |
-| `labelLarge` | Títulos de módulos en grid |
-
-### Espaciados
-
-| Token | Uso |
-|-------|-----|
-| `spacingSmall` | Entre elementos dentro de tarjetas |
-| `spacingMedium` | Entre secciones internas |
-| `spacingLarge` | Separación entre banner y carrusel |
-| `paddingHorizontal` | Margen lateral seguro |
-
-### Otros
-
-| Token | Uso |
-|-------|-----|
-| `borderRadiusMedium` | Tarjetas del carrusel |
-| `borderRadiusLarge` | Botones del grid |
-| `elevationSmall` | Sombras sutiles en tarjetas |
-
----
-
-## 4. Componentes Reutilizables Identificados
-
-### `UserBanner`
-
-| Prop | Tipo | Descripción |
-|------|------|-------------|
-| `userName` | `String` | Nombre del usuario logueado |
-| `profileImageUrl` | `String?` | URL de foto de perfil, null = placeholder |
-
-**Estados**: default, loading (avatar con shimmer)
-
----
-
-### `NotificationCard`
-
-| Prop | Tipo | Descripción |
-|------|------|-------------|
-| `title` | `String` | Título de la notificación |
-| `body` | `String` | Texto de la notificación |
-| `type` | `NotificationType` | Enum: info, warning, alert, event |
-| `date` | `DateTime` | Fecha de la notificación |
-| `isActive` | `bool` | Si está actualmente seleccionada |
-
-**Estados**: default, semiTransparent (laterales del carrusel), active (centrada, opaca)
-
----
-
-### `QuickAccessButton`
-
-| Prop | Tipo | Descripción |
-|------|------|-------------|
-| `icon` | `IconData` | Icono del módulo |
-| `label` | `String` | Nombre del módulo |
-| `onTap` | `VoidCallback` | Acción al presionar |
-
-**Estados**: default, pressed (escala 0.95), disabled (opacity 0.5)
-
----
-
-### `BottomNavBar`
-
-| Prop | Tipo | Descripción |
-|------|------|-------------|
-| `selectedIndex` | `int` | Índice del tab activo |
-| `onItemSelected` | `Function(int)` | Callback al cambiar tab |
-
-**Estados por item**: active (icono + label), inactive (solo icono)
-
-**Items**:
-
-1. Inicio (home icon)
-2. Pagos (payment icon)
-3. Notificaciones (bell icon)
-4. Visitas (calendar icon)
-
----
-
-## 5. Estados de Pantalla
-
-### Loading
-
-- Skeleton shimmer en:
-  - Avatar (circular, 48x48)
-  - Texto de saludo (2 líneas)
-  - Tarjetas del carrusel (3 items visibles)
-  - Grid de módulos (shimmer en grid 3x3)
-
-### Error
-
-- No aplica para pantalla home — es completamente estática.
-- Errores de datos se manejan dentro de cada componente individual.
-
-### Empty
-
-- Carrusel vacío: mensaje "No tienes notificaciones recientes" centrado.
-- Grid vacío: mostrar los 9 módulos siempre (no hay estado vacío).
-
-### Default
-
-- Todos los componentes renderizados con datos estáticos o mock.
-
----
-
-## 6. Interacciones y Comportamiento
-
-### Gestos
-
-| Gesto | Componente | Comportamiento |
-|-------|------------|----------------|
-| Swipe horizontal | NotificationCard | Scroll interno del carrusel. La pantalla NO hace scroll. |
-| Tap | QuickAccessButton | Navegar a la pantalla del módulo. Feedback visual con ScaleTransition (0.95). |
-| Tap | BottomNavBar item | Cambiar tab activo con animación. |
-| Tap | ProfileImage | Navegar a perfil de usuario (futuro). |
-
-### Animaciones
-
-| Animación | Duración | Curva |
-|-----------|----------|-------|
-| Scale en QuickAccessButton | 150ms | easeInOut |
-| Opacity en tarjetas laterales del carrusel | 200ms | easeOut |
-| Bottom nav indicator slide | 250ms | easeInOut |
-
-### Transiciones
-
-- Al navegar a otro módulo: SlideTransition horizontal (push).
-- No hay shared element transitions por ahora.
-
----
-
-## 7. Navegación
-
-### Inputs (Params)
-
-| Origen | Params | Descripción |
-|--------|--------|-------------|
-| LoginScreen | `userName`, `profileImageUrl` | Datos del usuario logueado |
-
-### Outputs
-
-| Acción | Destino |
-|--------|---------|
-| Tap "Pagos" (grid) | PagosScreen |
-| Tap "Visitas" (grid) | VisitasScreen |
-| Tap "Estado" (grid) | EstadoScreen |
-| Tap "Parqueadero" (grid) | ParqueaderoScreen |
-| Tap "Reservas" (grid) | ReservasScreen |
-| Tap "Comunidad" (grid) | ComunidadScreen |
-| Tap "Eventos" (grid) | EventosScreen |
-| Tap "Configuración" (grid) | ConfiguracionScreen |
-| Tap "Contáctanos" (grid) | ContactanosScreen |
-| Tap BottomNav "Inicio" | HomeScreen (re-render) |
-| Tap BottomNav "Pagos" | PagosScreen |
-| Tap BottomNav "Notificaciones" | NotificacionesScreen |
-| Tap BottomNav "Visitas" | VisitasScreen |
-| Tap ProfileImage | PerfilScreen (futuro) |
-
-### Deep Links
-
-```
-urbania://home
-urbania://inicio
-```
-
----
-
-## 8. Restricciones Técnicas
+* Diseño moderno tipo fintech.
+* Apariencia limpia y profesional.
+* Priorizar legibilidad sobre decoración.
+* Uso moderado de elevaciones.
+* Alto contraste entre contenido y fondo.
 
 ### Prohibido
 
-- ❌ `SingleChildScrollView` en el nivel principal.
-- ❌ `ListView` o `GridView` como scroll principal de pantalla.
-- ❌ `CustomScrollView` con `SliverList` o `SliverGrid`.
-- ❌ Scrollbars visibles.
-- ❌ Hardcoded de colores fuera del theme.
+* Glassmorphism.
+* Neumorphism.
+* Sombras excesivas.
+* Gradientes agresivos.
+* Efectos glow.
+* Bordes difuminados.
+* Elementos decorativos que reduzcan legibilidad.
 
-### Obligatorio
+### Fondo Decorativo
 
-- ✅ Todos los estilos desde `Theme.of(context)`.
-- ✅ Componentes reutilizables listados en sección 4.
-- ✅ Separación UI/Lógica (preparado para Provider/ViewModel).
-- ✅ SafeArea en todos los bordes de pantalla.
-- ✅ Constantes de dimensiones en archivo separado (`home_dimensions.dart`).
-
-### Preparado Para
-
-- Integración con `ChangeNotifier` (UserViewModel, NotificationsViewModel).
-- mock data substituir por llamadas a API sin cambiar estructura.
-- Tests unitarios en ViewModels independientes.
+* Utilizar blob shapes orgánicas como elementos de fondo.
+* Las formas deben ser asimétricas.
+* Bordes sólidos y definidos.
+* Sin blur.
+* Sin transparencias extremas.
+* Ubicadas detrás de las secciones principales para reforzar la separación visual.
 
 ---
 
-## 9. Checklist de Implementación
+## 4. Estructura Visual
 
-### Estructura
+### Layout General
 
-- [ ] SafeArea envuelve toda la pantalla.
-- [ ] Column con 3 secciones + BottomNavigationBar.
-- [ ] Ratios de altura aplicados (30%, 30%, 40%).
+* Pantalla completamente estática.
+* Sin scroll vertical.
+* SafeArea obligatorio.
+* Sin separadores visibles entre secciones.
 
-### Banner Principal
+### Distribución Vertical
 
-- [ ] Layout row: texto izquierda, avatar derecha.
-- [ ] Texto "¡Hola, [Nombre]!" con `headlineLarge`.
-- [ ] Avatar circular con fallback a placeholder.
-- [ ] Sin fondo (transparent).
+| Sección                    | Altura |
+| -------------------------- | ------ |
+| Banner principal           | 25%    |
+| Carrusel de notificaciones | 25%    |
+| Grid de navegación         | 40%    |
+| Bottom Navigation Bar      | 10%    |
 
-### Carrusel de Notificaciones
-
-- [ ] PageView con `physics: NeverScrollableScrollPhysics()`.
-- [ ] 3 NotificationCards visibles (central + partes laterales).
-- [ ] Tarjetas laterales semi-transparentes (opacity 0.6).
-- [ ] Indicadores de página (dots) opcionales.
-
-### Grid de Navegación
-
-- [ ] 3 columnas, grid de 3x3 (9 items).
-- [ ] QuickAccessButton cuadrado con borderRadiusLarge.
-- [ ] Icono centrado arriba, label debajo.
-- [ ] 9 módulos: Estado, Pagos, Visitas, Parqueadero, Reservas, Comunidad, Eventos, Configuración, Contáctanos.
-
-### Bottom Navigation Bar
-
-- [ ] 4 items: Inicio, Pagos, Notificaciones, Visitas.
-- [ ] Índice activo marcado visualmente.
-- [ ] Sin elevación, fondo de superficie.
-
-### Tema y Estilos
-
-- [ ] Todos los colores desde `theme.colorScheme`.
-- [ ] Tipografía desde `theme.textTheme`.
-- [ ] Espaciados desde constantes del design system.
-
-### Preparación ViewModel
-
-- [ ] HomeScreen acepta `UserViewModel` y `NotificationsViewModel` (opcional).
-- [ ] Datos mock reemplazables sin cambiar widget tree.
-- [ ] Constantes de layout en `home_dimensions.dart`.
+Estas proporciones son obligatorias.
 
 ---
 
-## 10. Archivos Esperados
+## 5. Grid Principal
 
-```
-lib/
-├── features/
-│   └── home/
-│       ├── presentation/
-│       │   ├── screens/
-│       │   │   └── home_screen.dart
-│       │   └── widgets/
-│       │       ├── user_banner.dart
-│       │       ├── notification_card.dart
-│       │       ├── notification_carousel.dart
-│       │       ├── quick_access_button.dart
-│       │       ├── quick_access_grid.dart
-│       │       └── bottom_nav_bar.dart
-│       └── home_dimensions.dart
-```
+### Reglas
+
+* 9 módulos fijos.
+* Distribución obligatoria: 3 columnas × 3 filas.
+* Todos los botones deben tener el mismo tamaño.
+* No se permite scroll interno.
+* Todos los módulos deben ser visibles simultáneamente.
+
+### Orden
+
+1. Estado
+2. Pagos
+3. Visitas
+4. Parqueadero
+5. Reservas
+6. Comunidad
+7. Eventos
+8. Configuración
+9. Contáctanos
 
 ---
 
-## 11. Notas de Implementación
+## 6. NotificationCarousel
 
-1. **Carrusel**: Usar `PageView` con `controller` para manejar scroll interno sin afectar el layout principal. El scroll horizontal del PageView NOpropaga scroll al padre.
+### Comportamiento Obligatorio
 
-2. **Blob shapes**: Los patrones orgánicos del fondo pueden implementarse con `CustomPaint` o usando un paquete como `flutter_simple_cblob` o assets SVG.
+* Swipe horizontal habilitado.
+* Implementado mediante PageView.
+* La pantalla principal no debe desplazarse.
+* La tarjeta activa siempre ocupa el centro.
+* Deben verse parcialmente las tarjetas laterales.
+* Las tarjetas laterales usan estado semiTransparent.
+* La tarjeta central usa estado active.
 
-3. **Responsive tablet**: El grid de navegación puede expandir a 4 columnas en tablets usando `LayoutBuilder` y cambiando el crossAxisCount del `GridView`.
+### Estados Visuales
 
-4. **Mock data**: Crear `home_mock_data.dart` con constantes para testing. No hardcodear dentro del screen.
+| Estado          | Escala | Opacidad |
+| --------------- | ------ | -------- |
+| active          | 1.0    | 1.0      |
+| semiTransparent | 0.92   | 0.7      |
+| empty           | N/A    | N/A      |
+
+### Reglas
+
+* Animación de escala suave al cambiar página.
+* Animación de opacidad suave.
+* Compatible con cualquier cantidad de notificaciones.
+* Mantener legibilidad en todos los tamaños de pantalla.
+
+---
+
+## 7. Arquitectura Obligatoria
+
+### Capas
+
+* Presentation
+* ViewModel
+* Domain
+* Data
+
+### Restricciones
+
+* La UI nunca consume repositorios directamente.
+* La UI nunca contiene lógica de negocio.
+* Los widgets solo consumen ViewModels.
+* Los ViewModels gestionan estado y orquestación.
+
+---
+
+## 8. Decisiones Prohibidas
+
+El agente NO debe:
+
+* Modificar la estructura de carpetas definida.
+* Cambiar nombres de componentes.
+* Crear widgets inline que sustituyan componentes reutilizables.
+* Hardcodear colores.
+* Hardcodear tipografías.
+* Hardcodear espaciados.
+* Agregar dependencias sin justificación.
+* Introducir patrones arquitectónicos distintos a los especificados.
+* Agregar scroll vertical.
+* Modificar las proporciones de layout.
+
+---
+
+## 9. Acceptance Criteria
+
+La implementación será válida únicamente si:
+
+* Toda la pantalla es visible sin scroll.
+* Los 9 módulos son visibles simultáneamente.
+* El carrusel permite swipe horizontal.
+* El Bottom Navigation Bar permanece fijo.
+* No existen RenderFlex Overflow.
+* No existen colores hardcodeados.
+* No existen textos hardcodeados fuera de mocks.
+* Todos los componentes definidos son reutilizables.
+* Todos los estilos provienen del Theme.
+* Todos los espaciados provienen del Design System.
+* La UI puede conectarse a ViewModels sin modificaciones estructurales.
+
+---
+
+## 10. Checklist Corregido
+
+### Layout
+
+* [ ] SafeArea envuelve toda la pantalla.
+* [ ] Column con Banner, Carrusel, Grid y BottomNavigationBar.
+* [ ] Ratios aplicados: 25% / 25% / 40% / 10%.
+* [ ] Sin scroll vertical.
+
+### Carrusel
+
+* [ ] PageView con scroll horizontal habilitado.
+* [ ] Tarjeta activa centrada.
+* [ ] Tarjetas laterales parcialmente visibles.
+* [ ] Escala y opacidad animadas.
+* [ ] Estado vacío soportado.
+
+### Grid
+
+* [ ] 3 columnas.
+* [ ] 3 filas.
+* [ ] 9 módulos visibles.
+* [ ] Sin scroll interno.
+
+### Arquitectura
+
+* [ ] UI separada de lógica.
+* [ ] ViewModels inyectables.
+* [ ] Mock data desacoplada.
+* [ ] Preparado para API futura.
+
+---

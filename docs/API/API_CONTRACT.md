@@ -10,8 +10,8 @@
 
 ### Base URL
 ```
-Desarrollo:   http://localhost:8080/api/v1
-Producción:   https://api.urbania.com/v1
+Desarrollo:   http://localhost:8080/api/
+Producción:   https://api.urbania.com/
 ```
 
 ### Headers Obligatorios
@@ -1330,7 +1330,6 @@ GET /api/v1/health
 ## Checklist al Agregar/Modificar Endpoint
 
 - [ ] Documentar request/response en este archivo
-- [ ] Actualizar `routes/api.php`
 - [ ] Crear/actualizar Controller
 - [ ] Crear/actualizar Request (validación)
 - [ ] Crear/actualizar Resource (serialización)

@@ -15,6 +15,9 @@ export default function Home(): JSX.Element {
           <Link className="button button--secondary" to="/docs/APP/AGENTS_GUIDE">
             Documentación APP
           </Link>
+          <Link className="button button--secondary" to="/docs/WEB/AGENTS_GUIDE">
+            Documentación WEB
+          </Link>
         </div>
       </main>
     </Layout>

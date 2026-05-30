@@ -103,11 +103,6 @@ String? _redirectLogic(AuthState? authState, String location) {
 > Es necesario usar `refreshListenable` con un `ChangeNotifier` que escuche los cambios del estado de autenticación y llame a `notifyListeners()`.
 > 
 > **Sin este patrón**, el login parece funcionar (el estado cambia a `Authenticated`) pero la navegación no ocurre.
-> 
-> **Referencias**:
-> - [GoRouter + Riverpod redirect guide](https://zenn.dev/harx/articles/95c3bb3a991f59)
-> - [Flutter issue #112915](https://github.com/flutter/flutter/issues/112915)
-> - [Riverpod discussions #1357](https://github.com/rrousselGit/riverpod/discussions/1357)
 
 > **Nota**: No hay splash screen separada. El loading inicial se maneja en la pantalla de login.
 > Si hay sesión guardada, el `AuthController` redirige automáticamente a `/` desde el login.

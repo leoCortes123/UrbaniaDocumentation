@@ -1,5 +1,5 @@
 # 📋 FEATURES_INDEX
-## Catálogo de Features del Proyecto Urbania
+## Catálogo de Features del Proyecto Portal Web Urbania
 
 > **Consultar**: Si es un feature nuevo o modificación de feature existente.
 > **Actualizar**: Cada vez que se agrega, completa o modifica un feature.
@@ -23,18 +23,15 @@
 
 ---
 
-## Features
-
----
 
 > **⚠️ Ubicación correcta**: Todo spec de feature debe ir en `/docs/features/[feature]/[feature].md`.
 > Ver `DIRECTORY_STRUCTURE.md` para la guía completa de organización.
-
 
 ## Checklist al Agregar/Modificar Feature
 
 - [ ] Revisar recursos de diseño en `/docs/features/[feature]/recursos/` (si son requeridos)
 - [ ] Actualizar tabla de estado en este documento
+- [ ] Crear/actualizar endpoints en `/docs/features/[feature]/endpoints.md`
 - [ ] Verificar que no excede prioridad sin dependencias resueltas
 
 ---

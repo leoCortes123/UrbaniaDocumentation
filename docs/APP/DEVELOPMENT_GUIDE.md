@@ -2,7 +2,7 @@
 ## Guía de Desarrollo del Proyecto Urbania
 
 > **Consultar**: Antes de empezar a codear cualquier tarea.
-> **Relacionado con**: ARCHITECTURE.md, GOLDEN_RULES.md, DEMO_SETUP.md
+> **Relacionado con**: ARCHITECTURE.md, GOLDEN_RULES.md
 
 ---
 
@@ -46,12 +46,12 @@ dependencies:
   # Functional Programming
   fpdart: ^latest
 
-  # Demo
-  faker: ^latest
-
   # Utils
   connectivity_plus: ^latest
   intl: ^latest
+
+  # Environment
+  flutter_dotenv: ^latest
 
 dev_dependencies:
   flutter_test:
@@ -78,18 +78,41 @@ dart run build_runner watch --delete-conflicting-outputs
 
 > **Nota**: Ejecutar este comando cada vez que se modifique un archivo con `@riverpod`, `@freezed`, `@DriftDatabase`, o `@JsonSerializable`.
 
+
+
+### 3.5. Configuración de Variables de Entorno (.env)
+
+Crear archivo `.env` en la raíz del proyecto:
+
+```
+USE_MOCK=true
+API_BASE_URL=https://urbaniaapidev.com
+```
+
+> **Nota**: El archivo `.env` debe estar incluido en `.gitignore` para no subir credenciales al repositorio.
+
+Actualizar `pubspec.yaml` para incluir el archivo `.env`:
+
+```yaml
+flutter:
+  assets:
+    - .env
+```
+
 ### 4. Inicialización en main.dart
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/database/app_database.dart';
-import 'core/demo/demo_data.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Cargar variables de entorno
+  await dotenv.load(fileName: '.env');
 
   // Inicializar Hive
   await Hive.initFlutter();
@@ -98,13 +121,17 @@ void main() async {
   // Inicializar Drift
   final database = AppDatabase();
 
-  // Seed datos demo (solo primera vez)
-  await database.seedDemoData();
+  // Determinar modo mock
+  final useMock = dotenv.env['USE_MOCK']?.toLowerCase() == 'true';
 
   runApp(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(database),
+        if (useMock) ...[
+          // Overrides para datasources mock
+          authDatasourceProvider.overrideWithValue(MockAuthDatasource()),
+        ],
       ],
       child: const UrbaniaApp(),
     ),
@@ -131,48 +158,6 @@ class UrbaniaApp extends ConsumerWidget {
 
 ---
 
-## Flujo de Trabajo por Feature (Demo Mode)
-
-### Paso 1: Definir Contrato (Domain)
-```
-/lib/[feature]/domain/entities/
-/lib/[feature]/domain/repositories/
-/lib/[feature]/domain/usecases/
-```
-
-### Paso 2: Implementar Fake Repository (Data)
-```
-/lib/[feature]/data/datasources/fake_[feature]_datasource.dart
-/lib/[feature]/data/repositories/[feature]_repository_impl.dart
-```
-
-### Paso 3: Implementar Providers (Presentation)
-```
-/lib/[feature]/presentation/providers/
-/lib/[feature]/presentation/states/
-```
-
-### Paso 4: Implementar UI (Presentation)
-```
-/lib/[feature]/presentation/pages/
-/lib/[feature]/presentation/widgets/
-```
-
-### Paso 5: Agregar Datos Mock
-```dart
-// /core/demo/demo_data.dart
-static List<NewFeatureEntity> get demoNewFeature => [...];
-```
-
-### Paso 6: Tests
-```
-test/[feature]/domain/usecases/
-test/[feature]/data/repositories/
-test/[feature]/presentation/
-```
-
----
-
 ## Comandos Útiles
 
 ```bash
@@ -192,11 +177,6 @@ dart run test_cov
 # Lint
 flutter analyze
 
-# Build APK demo
-flutter build apk --dart-define=DEMO_MODE=true
-
-# Build APK prod (futuro)
-flutter build apk --dart-define=DEMO_MODE=false
 ```
 
 ---

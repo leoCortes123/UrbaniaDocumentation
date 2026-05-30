@@ -18,7 +18,6 @@
 ├── ROUTING.md                 ← Navegación, rutas, GoRouter
 ├── FEATURES_INDEX.md          ← Catálogo de features y estado
 ├── DEVELOPMENT_GUIDE.md     ← Setup, flujo de trabajo, convenciones
-├── DEMO_SETUP.md              ← Modo offline, credenciales, mock data
 ├── API_CONTRACT.md            ← Referencia futura (backend)
 ├── IMPLEMENTATION_REPORT.md   ← Historial de iteraciones (solo lectura)
 │
@@ -51,7 +50,6 @@
   → /docs/ALERT_SYSTEM.md
   → /docs/FEATURES_INDEX.md
   → /docs/DEVELOPMENT_GUIDE.md
-  → /docs/DEMO_SETUP.md
   → /docs/features/[feature]/[feature].md
 
 ```
